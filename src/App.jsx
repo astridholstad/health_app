@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 import { useAuth } from './context/AuthContext.jsx'
 import LoginForm from './components/LoginForm.jsx'
@@ -162,6 +162,8 @@ function App() {
   const [selectedDays, setSelectedDays] = useState([])
   const [seed, setSeed] = useState(0)
   const [savedPlans, setSavedPlans] = useState([])
+  const [saveError, setSaveError] = useState('')
+  const [saveLoading, setSaveLoading] = useState(false)
 
   const plan = useMemo(() => generateSplit(numDays), [numDays, seed])
 
@@ -199,13 +201,23 @@ function App() {
   }, [user])
 
   const saveCurrentPlan = async () => {
-    const schedule = displayedDays.map((_, idx) => plan[idx] || plan[plan.length - 1])
-    const { data, error } = await supabase
-      .from('plans')
-      .insert({ user_id: user.id, days: numDays, schedule })
-      .select('*')
-    if (!error && data) {
-      setSavedPlans((prev) => [data[0], ...prev])
+    try {
+      setSaveError('')
+      setSaveLoading(true)
+      const schedule = displayedDays.map((_, idx) => plan[idx] || plan[plan.length - 1])
+      const { data, error } = await supabase
+        .from('plans')
+        .insert({ user_id: user.id, days: numDays, schedule })
+        .select('*')
+      if (error) throw error
+      if (data && data[0]) {
+        setSavedPlans((prev) => [data[0], ...prev])
+      }
+    } catch (e) {
+      console.error('Feil ved lagring av plan:', e)
+      setSaveError(e?.message || 'Kunne ikke lagre plan')
+    } finally {
+      setSaveLoading(false)
     }
   }
 
