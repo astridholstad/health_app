@@ -1,0 +1,44 @@
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.6;
+  font-weight: 400;
+  color-scheme: light;
+  color: #4a2c3a;
+  background-color: #fff5f9;
+  --bs-body-bg: #fff5f9;
+  --bs-body-color: #4a2c3a;
+  --bs-primary: #ff66b3;
+  --bs-primary-rgb: 255, 102, 179;
+  --bs-link-color: #ff66b3;
+  --bs-link-hover-color: #e0559e;
+}
+
+a {
+  font-weight: 500;
+  color: var(--bs-link-color);
+  text-decoration: inherit;
+}
+a:hover {
+  color: var(--bs-link-hover-color);
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
+}
+
+/* Lyst rosa tema-justeringer */
+.card {
+  border: 1px solid #ffd1e6;
+}
+.list-group-item {
+  background-color: #ffffff;
+  border-color: #ffd1e6;
+}
+.text-bg-secondary {
+  background-color: #ff99c8 !important;
+  color: #4a2c3a !important;
+}
