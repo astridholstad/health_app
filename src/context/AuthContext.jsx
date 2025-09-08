@@ -1,38 +1,38 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { supabase } from '../lib/supabase.js'
 
 const AuthContext = createContext(null)
-
-const STORAGE_KEY = 'health_app_session'
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY)
-      if (raw) {
-        const parsed = JSON.parse(raw)
-        if (parsed && parsed.user) setUser(parsed.user)
-      }
-    } catch {}
-    setLoading(false)
+    const init = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      setUser(session?.user ?? null)
+      setLoading(false)
+    }
+    init()
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+    return () => {
+      listener.subscription.unsubscribe()
+    }
   }, [])
 
   const login = async ({ email, password }) => {
-    // Mock: aksepterer alle eposter med passordlengde >= 4
-    if (!email || !password || password.length < 4) {
-      throw new Error('Ugyldig legitimasjon')
-    }
-    const mockUser = { id: crypto.randomUUID(), email }
-    setUser(mockUser)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ user: mockUser }))
-    return mockUser
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) throw error
+    setUser(data.user)
+    return data.user
   }
 
   const logout = async () => {
+    await supabase.auth.signOut()
     setUser(null)
-    localStorage.removeItem(STORAGE_KEY)
   }
 
   const value = useMemo(() => ({ user, login, logout, loading }), [user, loading])

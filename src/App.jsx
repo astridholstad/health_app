@@ -3,6 +3,7 @@ import './App.css'
 import { useAuth } from './context/AuthContext.jsx'
 import LoginForm from './components/LoginForm.jsx'
 import PlansTable from './components/PlansTable.jsx'
+import { supabase } from './lib/supabase.js'
 
 const EXERCISE_LIBRARY = {
   'Helkropp': [
@@ -184,15 +185,28 @@ function App() {
     )
   }
 
-  const saveCurrentPlan = () => {
-    const schedule = displayedDays.map((_, idx) => plan[idx] || plan[plan.length - 1])
-    const entry = {
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-      days: numDays,
-      schedule
+  // Hent lagrede planer når bruker finnes
+  useEffect(() => {
+    const loadPlans = async () => {
+      const { data, error } = await supabase
+        .from('plans')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+      if (!error && data) setSavedPlans(data)
     }
-    setSavedPlans((prev) => [entry, ...prev])
+    loadPlans()
+  }, [user])
+
+  const saveCurrentPlan = async () => {
+    const schedule = displayedDays.map((_, idx) => plan[idx] || plan[plan.length - 1])
+    const { data, error } = await supabase
+      .from('plans')
+      .insert({ user_id: user.id, days: numDays, schedule })
+      .select('*')
+    if (!error && data) {
+      setSavedPlans((prev) => [data[0], ...prev])
+    }
   }
 
   return (
