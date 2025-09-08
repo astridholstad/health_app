@@ -1,5 +1,8 @@
 import { useMemo, useState } from 'react'
 import './App.css'
+import { useAuth } from './context/AuthContext.jsx'
+import LoginForm from './components/LoginForm.jsx'
+import PlansTable from './components/PlansTable.jsx'
 
 const EXERCISE_LIBRARY = {
   'Helkropp': [
@@ -153,9 +156,11 @@ function sampleExercisesFor(dayType, maxExercises = 5) {
 }
 
 function App() {
+  const { user, logout } = useAuth()
   const [numDays, setNumDays] = useState(3)
   const [selectedDays, setSelectedDays] = useState([])
   const [seed, setSeed] = useState(0)
+  const [savedPlans, setSavedPlans] = useState([])
 
   const plan = useMemo(() => generateSplit(numDays), [numDays, seed])
 
@@ -167,13 +172,42 @@ function App() {
 
   const displayedDays = selectedDays.length > 0 ? selectedDays : WEEKDAYS.slice(0, numDays)
 
+  if (!user) {
+    return (
+      <div className="container py-5">
+        <div className="row justify-content-center">
+          <div className="col-12 col-sm-10 col-md-6 col-lg-5">
+            <LoginForm />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const saveCurrentPlan = () => {
+    const schedule = displayedDays.map((_, idx) => plan[idx] || plan[plan.length - 1])
+    const entry = {
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      days: numDays,
+      schedule
+    }
+    setSavedPlans((prev) => [entry, ...prev])
+  }
+
   return (
     <div className="container py-5">
       <div className="row justify-content-center">
         <div className="col-12 col-md-10 col-lg-8">
           <div className="card shadow-sm">
             <div className="card-body">
-              <h1 className="h3 mb-3 text-center">Treningsplan-generator</h1>
+              <div className="d-flex align-items-center mb-3">
+                <h1 className="h3 m-0">Treningsplan-generator</h1>
+                <div className="ms-auto d-flex align-items-center gap-2">
+                  <span className="small text-muted d-none d-sm-inline">{user.email}</span>
+                  <button className="btn btn-outline-secondary btn-sm" onClick={logout}>Logg ut</button>
+                </div>
+              </div>
 
               <div className="mb-4">
                 <label htmlFor="days" className="form-label">Hvor mange dager vil du trene denne uken?</label>
@@ -246,6 +280,10 @@ function App() {
                 })}
               </ul>
 
+              <div className="mt-3 d-flex justify-content-end">
+                <button className="btn btn-primary" onClick={saveCurrentPlan}>Lagre plan</button>
+              </div>
+
               <div className="mt-4">
                 <details>
                   <summary className="mb-2">Hva betyr split-typene?</summary>
@@ -260,6 +298,18 @@ function App() {
               </div>
             </div>
           </div>
+
+          <div className="mt-4">
+            <div className="card shadow-sm">
+              <div className="card-body">
+                <div className="d-flex align-items-center mb-2">
+                  <h2 className="h6 m-0">Lagrede planer</h2>
+                </div>
+                <PlansTable plans={savedPlans} />
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
